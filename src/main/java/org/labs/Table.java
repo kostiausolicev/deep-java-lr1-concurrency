@@ -14,6 +14,17 @@ public class Table {
     private final Programmer[] allProgrammers;
     private final AtomicInteger sides;
     private final Queue<Programmer> queue;
+    private int fixedEatDuration = -1;
+
+    public Table(int seatsCount, int waitersCount, int threshold, int sides, int eatDuration) {
+        this.seatsCount = seatsCount;
+        this.waitersCount = waitersCount;
+        this.threshold = threshold;
+        this.sides = new AtomicInteger(sides);
+        this.allProgrammers = new Programmer[seatsCount];
+        this.queue = new ConcurrentLinkedQueue<>();
+        this.fixedEatDuration = eatDuration;
+    }
 
     public Table(int seatsCount, int waitersCount, int threshold, int sides) {
         this.seatsCount = seatsCount;
@@ -34,7 +45,12 @@ public class Table {
         for (int p = 0; p < seatsCount; p++) {
             Spoon ls = spoons[p];
             Spoon rs = spoons[(p + 1) % seatsCount];
-            Programmer programmer = new Programmer(p, ls, rs);
+            Programmer programmer;
+            if (fixedEatDuration == -1) {
+                programmer = new Programmer(p, ls, rs);
+            } else {
+                programmer = new Programmer(p, ls, rs, fixedEatDuration);
+            }
             allProgrammers[p] = programmer;
             queue.add(programmer);
         }
@@ -43,11 +59,13 @@ public class Table {
             for (int i = 0; i < seatsCount; i++) {
                 final Programmer p = allProgrammers[i];
                 executor.submit(() -> {
-                    while (sides.get() > 0 || p.hasSide()) {
-                        int eatCount = p.eat();
-                        if (eatCount < 0) continue;
-                        updateProgrammerSides(p);
-                        queue.add(p);
+                    while (sides.get() > 0) {
+                        if (!p.hasSide()) continue;
+                        if (sides.decrementAndGet() >= 0) {
+                            p.eat();
+                            updateProgrammerSides(p);
+                            queue.add(p);
+                        }
                     }
                 });
             }
@@ -58,7 +76,6 @@ public class Table {
                         Programmer p = getWaitProgrammer();
                         if (p == null) continue;
                         p.putSide();
-                        sides.decrementAndGet();
                     }
                 });
             }
@@ -80,8 +97,7 @@ public class Table {
                     .map(Programmer::getTotalSides)
                     .min(Integer::compareTo)
                     .orElse(0);
-            // если он съел на threshold больше текущего минимального - возвращаем его в конец очереди
-            if (p.getTotalSides() - currentMinimal > this.threshold) {
+            if (p.getTotalSides() - currentMinimal >= this.threshold) {
                 queue.add(p);
                 continue;
             }
