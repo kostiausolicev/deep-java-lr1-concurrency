@@ -14,9 +14,11 @@ public class Table {
     private final Programmer[] allProgrammers;
     private final AtomicInteger sides;
     private final Queue<Programmer> queue;
-    private int fixedEatDuration = -1;
+    private final int fixedEatDuration;
 
     public Table(int seatsCount, int waitersCount, int threshold, int sides, int eatDuration) {
+        if (seatsCount <= 2) throw new RuntimeException("Число мест за столом должно быть больше 2-х");
+        if (waitersCount <= 0) throw new RuntimeException("Число официантов должно быть больше 0");
         this.seatsCount = seatsCount;
         this.waitersCount = waitersCount;
         this.threshold = threshold;
@@ -27,12 +29,7 @@ public class Table {
     }
 
     public Table(int seatsCount, int waitersCount, int threshold, int sides) {
-        this.seatsCount = seatsCount;
-        this.waitersCount = waitersCount;
-        this.threshold = threshold;
-        this.sides = new AtomicInteger(sides);
-        this.allProgrammers = new Programmer[seatsCount];
-        this.queue = new ConcurrentLinkedQueue<>();
+        this(seatsCount, waitersCount, threshold, sides, -1);
     }
 
     public Programmer[] start() {
