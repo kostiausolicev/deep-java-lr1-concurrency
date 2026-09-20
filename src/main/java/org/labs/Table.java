@@ -1,7 +1,6 @@
 package org.labs;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -59,7 +58,7 @@ public class Table {
                         Programmer p = getWaitProgrammer();
                         if (p == null) continue;
                         p.putSide();
-                        System.out.println(sides.decrementAndGet());
+                        sides.decrementAndGet();
                     }
                 });
             }
