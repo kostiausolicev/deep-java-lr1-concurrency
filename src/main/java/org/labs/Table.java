@@ -45,9 +45,9 @@ public class Table {
             Spoon rs = spoons[(p + 1) % seatsCount];
             Programmer programmer;
             if (fixedEatDuration == -1) {
-                programmer = new Programmer(p, ls, rs);
+                programmer = new Programmer(ls, rs);
             } else {
-                programmer = new Programmer(p, ls, rs, fixedEatDuration);
+                programmer = new Programmer(ls, rs, fixedEatDuration);
             }
             allProgrammers[p] = programmer;
             queue.add(programmer);

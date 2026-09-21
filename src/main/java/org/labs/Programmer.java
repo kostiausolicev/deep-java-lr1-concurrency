@@ -1,7 +1,6 @@
 package org.labs;
 
 public class Programmer {
-    private final int id;
     private final Spoon leftSpoon;
     private final Spoon rigthSpoon;
 
@@ -12,8 +11,7 @@ public class Programmer {
 
     private volatile boolean hasSide;
 
-    Programmer(int id, Spoon leftSpoon, Spoon rigthSpoon, int eatDuration) {
-        this.id = id;
+    Programmer(Spoon leftSpoon, Spoon rigthSpoon, int eatDuration) {
         this.leftSpoon = leftSpoon;
         this.rigthSpoon = rigthSpoon;
         this.eatDuration = eatDuration;
@@ -21,13 +19,8 @@ public class Programmer {
         this.hasSide = false;
     }
 
-    Programmer(int id, Spoon leftSpoon, Spoon rigthSpoon) {
-        this.id = id;
-        this.leftSpoon = leftSpoon;
-        this.rigthSpoon = rigthSpoon;
-        this.eatDuration = (int) (Math.random() * 100);
-        this.totalSides = 0;
-        this.hasSide = false;
+    Programmer(Spoon leftSpoon, Spoon rigthSpoon) {
+        this(leftSpoon, rigthSpoon, (int) (Math.random() * 100));
     }
 
     public void putSide() {
