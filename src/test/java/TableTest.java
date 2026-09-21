@@ -10,6 +10,22 @@ import static org.junit.jupiter.api.Assertions.*;
 class TableTest {
 
     @Nested
+    @DisplayName("Тесты валидации")
+    class Validation {
+        @Test
+        @DisplayName("Официантов меньше 1")
+        void waitersLess1() {
+            assertThrows(IllegalArgumentException.class, () -> new Table(10, 0, 2, 2));
+        }
+
+        @Test
+        @DisplayName("Мест за столом меньше 3")
+        void seatsLess3() {
+            assertThrows(IllegalArgumentException.class, () -> new Table(2, 1, 2, 2));
+        }
+    }
+
+    @Nested
     @DisplayName("Работа стола")
     class TableOperation {
 

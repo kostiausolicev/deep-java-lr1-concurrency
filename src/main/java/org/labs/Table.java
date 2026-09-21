@@ -17,8 +17,8 @@ public class Table {
     private final int fixedEatDuration;
 
     public Table(int seatsCount, int waitersCount, int threshold, int sides, int eatDuration) {
-        if (seatsCount <= 2) throw new RuntimeException("Число мест за столом должно быть больше 2-х");
-        if (waitersCount <= 0) throw new RuntimeException("Число официантов должно быть больше 0");
+        if (seatsCount <= 2) throw new IllegalArgumentException("Число мест за столом должно быть больше 2-х");
+        if (waitersCount <= 0) throw new IllegalArgumentException("Число официантов должно быть больше 0");
         this.seatsCount = seatsCount;
         this.waitersCount = waitersCount;
         this.threshold = threshold;
@@ -60,7 +60,6 @@ public class Table {
                         if (!p.hasSide()) continue;
                         if (sides.decrementAndGet() >= 0) {
                             p.eat();
-                            updateProgrammerSides(p);
                             queue.add(p);
                         }
                     }
@@ -79,10 +78,6 @@ public class Table {
         }
 
         return allProgrammers;
-    }
-
-    private void updateProgrammerSides(Programmer p) {
-
     }
 
     private Programmer getWaitProgrammer() {
