@@ -60,7 +60,7 @@ public class Table {
                 programmersExecutor.submit(() -> {
                     while (sides.get() > 0) {
                         if (!p.hasSide()) continue;
-                        if (sides.decrementAndGet() >= 0) {
+                        if (tryReserveSide()) {
                             p.eat();
                             queue.add(p);
                         }
@@ -80,6 +80,18 @@ public class Table {
         }
 
         return allProgrammers;
+    }
+
+    private boolean tryReserveSide() {
+        int remaining;
+        do {
+            remaining = sides.get();
+            if (remaining <= 0) {
+                return false;
+            }
+        } while (!sides.compareAndSet(remaining, remaining - 1));
+
+        return true;
     }
 
     private Programmer getWaitProgrammer() {
