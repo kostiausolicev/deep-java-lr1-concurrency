@@ -23,6 +23,12 @@ class TableTest {
         void seatsLess3() {
             assertThrows(IllegalArgumentException.class, () -> new Table(2, 1, 2, 2));
         }
+
+        @Test
+        @DisplayName("Мест за столом меньше 3")
+        void thresholdIsNegative() {
+            assertThrows(IllegalArgumentException.class, () -> new Table(10, 1, -2, 2));
+        }
     }
 
     @Nested

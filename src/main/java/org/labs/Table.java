@@ -19,6 +19,7 @@ public class Table {
     public Table(int seatsCount, int waitersCount, int threshold, int sides, int eatDuration) {
         if (seatsCount <= 2) throw new IllegalArgumentException("Число мест за столом должно быть больше 2-х");
         if (waitersCount <= 0) throw new IllegalArgumentException("Число официантов должно быть больше 0");
+        if (threshold <= 0) throw new IllegalArgumentException("Порог должен быть положительным");
         this.seatsCount = seatsCount;
         this.waitersCount = waitersCount;
         this.threshold = threshold;
@@ -51,11 +52,12 @@ public class Table {
             allProgrammers[p] = programmer;
             queue.add(programmer);
         }
-
-        try (ExecutorService executor = Executors.newFixedThreadPool(seatsCount + waitersCount)) {
-            for (int i = 0; i < seatsCount; i++) {
-                final Programmer p = allProgrammers[i];
-                executor.submit(() -> {
+        try (
+                ExecutorService programmersExecutor = Executors.newFixedThreadPool(seatsCount);
+                ExecutorService waitersExecutor = Executors.newFixedThreadPool(waitersCount)
+        ) {
+            for (Programmer p : allProgrammers) {
+                programmersExecutor.submit(() -> {
                     while (sides.get() > 0) {
                         if (!p.hasSide()) continue;
                         if (sides.decrementAndGet() >= 0) {
@@ -67,7 +69,7 @@ public class Table {
             }
 
             for (int i = 0; i < waitersCount; i++) {
-                executor.submit(() -> {
+                waitersExecutor.submit(() -> {
                     while (sides.get() > 0) {
                         Programmer p = getWaitProgrammer();
                         if (p == null) continue;
@@ -89,7 +91,7 @@ public class Table {
                     .map(Programmer::getTotalSides)
                     .min(Integer::compareTo)
                     .orElse(0);
-            if (p.getTotalSides() - currentMinimal >= this.threshold) {
+            if (sides.get() > 0 && p.getTotalSides() - currentMinimal >= this.threshold) {
                 queue.add(p);
                 continue;
             }

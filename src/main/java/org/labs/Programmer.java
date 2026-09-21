@@ -8,7 +8,7 @@ public class Programmer {
     private final int eatDuration;
 
     // общее число порций, полученных программистом
-    private int totalSides;
+    private volatile int totalSides;
 
     private volatile boolean hasSide;
 
