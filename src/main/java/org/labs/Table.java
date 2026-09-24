@@ -1,10 +1,9 @@
 package org.labs;
 
-import java.util.Arrays;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Table {
@@ -13,7 +12,7 @@ public class Table {
     private final int threshold;
     private final Programmer[] allProgrammers;
     private final AtomicInteger sides;
-    private final Queue<Programmer> queue;
+    private final BlockingQueue<Programmer> queue;
     private final int fixedEatDuration;
 
     public Table(int seatsCount, int waitersCount, int threshold, int sides, int eatDuration) {
@@ -25,7 +24,7 @@ public class Table {
         this.threshold = threshold;
         this.sides = new AtomicInteger(sides);
         this.allProgrammers = new Programmer[seatsCount];
-        this.queue = new ConcurrentLinkedQueue<>();
+        this.queue = new LinkedBlockingQueue<>();
         this.fixedEatDuration = eatDuration;
     }
 
@@ -52,24 +51,22 @@ public class Table {
             allProgrammers[p] = programmer;
             queue.add(programmer);
         }
-        try (
-                ExecutorService programmersExecutor = Executors.newFixedThreadPool(seatsCount);
-                ExecutorService waitersExecutor = Executors.newFixedThreadPool(waitersCount)
-        ) {
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             for (Programmer p : allProgrammers) {
-                programmersExecutor.submit(() -> {
+                executor.submit(() -> {
                     while (sides.get() > 0) {
-                        if (!p.hasSide()) continue;
-                        if (tryReserveSide()) {
-                            p.eat();
-                            queue.add(p);
+                        p.waitSide();
+                        if (!tryReserveSide()) {
+                            return;
                         }
+                        p.eat();
+                        queue.add(p);
                     }
                 });
             }
 
             for (int i = 0; i < waitersCount; i++) {
-                waitersExecutor.submit(() -> {
+                executor.submit(() -> {
                     while (sides.get() > 0) {
                         Programmer p = getWaitProgrammer();
                         if (p == null) continue;
@@ -97,17 +94,20 @@ public class Table {
     private Programmer getWaitProgrammer() {
         Programmer p;
         while (true) {
-            p = queue.poll();
-            if (p == null) return null;
-            int currentMinimal = Arrays.stream(allProgrammers)
-                    .map(Programmer::getTotalSides)
-                    .min(Integer::compareTo)
-                    .orElse(0);
-            if (sides.get() > 0 && p.getTotalSides() - currentMinimal >= this.threshold) {
-                queue.add(p);
-                continue;
+            try {
+                p = queue.take();
+                int currentMinimal = Integer.MAX_VALUE;
+                for (Programmer p1 : allProgrammers) {
+                    currentMinimal = Math.min(currentMinimal, p1.getTotalSides());
+                }
+                if (sides.get() > 0 && p.getTotalSides() - currentMinimal >= this.threshold) {
+                    queue.add(p);
+                    continue;
+                }
+                break;
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            break;
         }
         return p;
     }

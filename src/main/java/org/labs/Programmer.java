@@ -1,5 +1,8 @@
 package org.labs;
 
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.LongAdder;
+
 public class Programmer {
     private final Spoon leftSpoon;
     private final Spoon rigthSpoon;
@@ -7,32 +10,34 @@ public class Programmer {
     private final int eatDuration;
 
     // общее число порций, полученных программистом
-    private volatile int totalSides;
-
-    private volatile boolean hasSide;
+    private final LongAdder totalSides;
+    private final Semaphore hasSide;
 
     Programmer(Spoon leftSpoon, Spoon rigthSpoon, int eatDuration) {
         this.leftSpoon = leftSpoon;
         this.rigthSpoon = rigthSpoon;
         this.eatDuration = eatDuration;
-        this.totalSides = 0;
-        this.hasSide = false;
+        this.totalSides = new LongAdder();
+        this.hasSide = new Semaphore(0);
     }
 
     Programmer(Spoon leftSpoon, Spoon rigthSpoon) {
-        this(leftSpoon, rigthSpoon, (int) (Math.random() * 100));
+        this(leftSpoon, rigthSpoon, (int) (Math.random() * 10));
     }
 
     public void putSide() {
-        this.hasSide = true;
+        this.hasSide.release();
     }
 
-    public boolean hasSide() {
-        return this.hasSide;
+    public void waitSide() {
+        try {
+            this.hasSide.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public int eat() {
-        if (!hasSide) return -1;
+    public void eat() {
         try {
             // пытаемся взять первую ложку и затем пытаемся взять вторую
             if (this.leftSpoon.getId() < this.rigthSpoon.getId()) {
@@ -44,12 +49,10 @@ public class Programmer {
             }
             // типо едим
             Thread.sleep(this.eatDuration);
-            return ++this.totalSides;
+            this.totalSides.add(1);
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         } finally {
-            // мы поели и больше у нас нет еды
-            this.hasSide = false;
             // отпускаем ложки в обратном порядке блокировки
             if (this.leftSpoon.getId() < this.rigthSpoon.getId()) {
                 this.rigthSpoon.put();
@@ -66,6 +69,6 @@ public class Programmer {
     }
 
     public int getTotalSides() {
-        return totalSides;
+        return totalSides.intValue();
     }
 }
