@@ -80,15 +80,7 @@ public class Table {
     }
 
     private boolean tryReserveSide() {
-        int remaining;
-        do {
-            remaining = sides.get();
-            if (remaining <= 0) {
-                return false;
-            }
-        } while (!sides.compareAndSet(remaining, remaining - 1));
-
-        return true;
+        return sides.decrementAndGet() >= 0;
     }
 
     private Programmer getWaitProgrammer() {

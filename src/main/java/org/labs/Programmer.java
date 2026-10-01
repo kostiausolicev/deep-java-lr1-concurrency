@@ -1,7 +1,7 @@
 package org.labs;
 
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Programmer {
     private final Spoon leftSpoon;
@@ -10,14 +10,14 @@ public class Programmer {
     private final int eatDuration;
 
     // общее число порций, полученных программистом
-    private final LongAdder totalSides;
+    private final AtomicLong totalSides;
     private final Semaphore hasSide;
 
     Programmer(Spoon leftSpoon, Spoon rigthSpoon, int eatDuration) {
         this.leftSpoon = leftSpoon;
         this.rigthSpoon = rigthSpoon;
         this.eatDuration = eatDuration;
-        this.totalSides = new LongAdder();
+        this.totalSides = new AtomicLong();
         this.hasSide = new Semaphore(0);
     }
 
@@ -49,7 +49,7 @@ public class Programmer {
             }
             // типо едим
             Thread.sleep(this.eatDuration);
-            this.totalSides.add(1);
+            this.totalSides.incrementAndGet();
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         } finally {
